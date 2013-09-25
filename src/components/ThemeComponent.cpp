@@ -204,17 +204,30 @@ void ThemeComponent::readXML(std::string path, bool detailed)
 	mFloatMap["listTextOffsetX"] = strToFloat(root.child("listTextOffsetX").text().get(), mFloatMap["listTextOffsetX"]);
 
 	//game image stuff
-	std::string artPos = root.child("gameImagePos").text().get();
+	mNumGameImages = 0;
+	for (pugi::xml_node gameImagePosNode : root.children("gameImagePos"))
+	{
+		std::string artPosX, artPosY;
+		std::string artPos = gameImagePosNode.text().get();
+		splitString(artPos, ' ', &artPosX, &artPosY);
+		pugi::xml_attribute idAttr = gameImagePosNode.attribute("id");
+		int imageId = atoi(idAttr.value());
+
+		std::string offXKey = getGameImageParamKey("gameImageOffsetX", imageId);
+		std::string offYKey = getGameImageParamKey("gameImageOffsetY", imageId);
+
+		mFloatMap[offXKey] = resolveExp(artPosX, mFloatMap[offXKey]);
+		mFloatMap[offYKey] = resolveExp(artPosY, mFloatMap[offYKey]);
+		mNumGameImages++;
+	}
+
 	std::string artDim = root.child("gameImageDim").text().get();
 	std::string artOrigin = root.child("gameImageOrigin").text().get();
 
-	std::string artPosX, artPosY, artWidth, artHeight, artOriginX, artOriginY;
-	splitString(artPos, ' ', &artPosX, &artPosY);
+	std::string artWidth, artHeight, artOriginX, artOriginY;
 	splitString(artDim, ' ', &artWidth, &artHeight);
 	splitString(artOrigin, ' ', &artOriginX, &artOriginY);
 
-	mFloatMap["gameImageOffsetX"] = resolveExp(artPosX, mFloatMap["gameImageOffsetX"]);
-	mFloatMap["gameImageOffsetY"] = resolveExp(artPosY, mFloatMap["gameImageOffsetY"]);
 	mFloatMap["gameImageWidth"] = resolveExp(artWidth, mFloatMap["gameImageWidth"]);
 	mFloatMap["gameImageHeight"] = resolveExp(artHeight, mFloatMap["gameImageHeight"]);
 	mFloatMap["gameImageOriginX"] = resolveExp(artOriginX, mFloatMap["gameImageOriginX"]);
@@ -238,6 +251,14 @@ void ThemeComponent::readXML(std::string path, bool detailed)
 
 	LOG(LogInfo) << "Theme loading complete.";
 }
+
+const std::string ThemeComponent::getGameImageParamKey(std::string prefix, int imageId)
+{
+	std::ostringstream stream;
+	stream << prefix << "_" << imageId;
+	return stream.str();
+}
+
 
 //recursively creates components
 void ThemeComponent::createComponentChildren(pugi::xml_node node, GuiComponent* parent)
@@ -408,3 +429,19 @@ std::shared_ptr<Font> ThemeComponent::resolveFont(pugi::xml_node node, std::stri
 
 	return Font::get(*mWindow->getResourceManager(), path, size);
 }
+
+int ThemeComponent::getNumGameImages() const
+{
+	return mNumGameImages;
+}
+
+Eigen::Vector3f ThemeComponent::getImagePos(int imageId)
+{
+	std::string offXKey = getGameImageParamKey("gameImageOffsetX", imageId);
+	std::string offYKey = getGameImageParamKey("gameImageOffsetY", imageId);
+	return Eigen::Vector3f(
+		Renderer::getScreenWidth() * getFloat(offXKey),
+		Renderer::getScreenHeight() * getFloat(offYKey), 0.0f);
+}
+
+

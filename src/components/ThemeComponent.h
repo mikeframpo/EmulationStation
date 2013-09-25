@@ -30,6 +30,9 @@ public:
 	std::shared_ptr<Font> getDescriptionFont();
 	std::shared_ptr<Font> getFastSelectFont();
 
+	int getNumGameImages() const;
+	Eigen::Vector3f getImagePos(int imageId);
+
 private:
 	void setDefaults();
 	void deleteComponents();
@@ -43,9 +46,11 @@ private:
 	void splitString(std::string str, char delim, std::string* before, std::string* after);
 	float strToFloat(std::string str, float defaultVal = 0.0f);
 	std::shared_ptr<Font> resolveFont(pugi::xml_node node, std::string defaultPath, unsigned int defaultSize);
+	const std::string getGameImageParamKey(std::string prefix, int imageId);
 
 	std::string mPath;
 
+	int mNumGameImages;
 	std::map<std::string, unsigned int> mColorMap;
 	std::map<std::string, bool> mBoolMap;
 	std::map<std::string, float> mFloatMap;

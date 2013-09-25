@@ -10,11 +10,6 @@
 
 std::vector<FolderData::SortState> GuiGameList::sortStates;
 
-Eigen::Vector3f GuiGameList::getImagePos()
-{
-	return Eigen::Vector3f(Renderer::getScreenWidth() * mTheme->getFloat("gameImageOffsetX"), Renderer::getScreenHeight() * mTheme->getFloat("gameImageOffsetY"), 0.0f);
-}
-
 bool GuiGameList::isDetailed() const
 {
 	if(mSystem == NULL)
@@ -26,7 +21,7 @@ bool GuiGameList::isDetailed() const
 GuiGameList::GuiGameList(Window* window) : GuiComponent(window), 
 	mTheme(new ThemeComponent(mWindow)),
 	mList(window, 0.0f, 0.0f, Font::get(*window->getResourceManager(), Font::getDefaultPath(), FONT_SIZE_MEDIUM)), 
-	mImages(1, ImageComponent(window)),
+	mImages(2, ImageComponent(window)),
 	mDescription(window), 
 	mDescContainer(window), 
 	mTransitionImage(window, 0.0f, 0.0f, "", (float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight(), true), 
@@ -336,16 +331,15 @@ void GuiGameList::updateTheme()
 		mList.setPosition(mTheme->getFloat("listOffsetX") * Renderer::getScreenWidth(), mList.getPosition().y());
 		mList.setTextOffsetX((int)(mTheme->getFloat("listTextOffsetX") * Renderer::getScreenWidth()));
         
-        for (   std::vector<ImageComponent>::iterator it = mImages.begin();
-                it != mImages.end();
-                ++it) {
-            (*it).setPosition(
-					mTheme->getFloat("gameImageOffsetX") * Renderer::getScreenWidth(),
-					mTheme->getFloat("gameImageOffsetY") * Renderer::getScreenHeight());
-            (*it).setOrigin(
+        for (int iImg = 0; iImg < mTheme->getNumGameImages(); iImg++) {
+			Eigen::Vector3f imagePos = mTheme->getImagePos(iImg);
+            mImages[iImg].setPosition(
+					imagePos[0] * Renderer::getScreenWidth(),
+					imagePos[1] * Renderer::getScreenHeight());
+            mImages[iImg].setOrigin(
 					mTheme->getFloat("gameImageOriginX"),
 					mTheme->getFloat("gameImageOriginY"));
-            (*it).setResize(
+            mImages[iImg].setResize(
 					mTheme->getFloat("gameImageWidth") * Renderer::getScreenWidth(),
 					mTheme->getFloat("gameImageHeight") * Renderer::getScreenHeight(), false);
         }
@@ -385,15 +379,16 @@ void GuiGameList::updateDetailData()
 				else
 					mImages[iImg].setImage(((GameData*)mList.getSelectedObject())->getImagePath(iImg));
 				
-				mImages[iImg].setPosition(getImagePos() - imgOffset);
+				mImages[iImg].setPosition(mTheme->getImagePos(iImg) - imgOffset);
 			}
 
 			mImageAnimation.fadeIn(35);
 			mImageAnimation.move(imgOffset.x(), imgOffset.y(), 20);
 
+			//TODO:MJF: think about the best place to put the desc container, maybe just user defined?
 			mDescContainer.setPosition(Eigen::Vector3f(
 					Renderer::getScreenWidth() * 0.03f, 
-					getImagePos().y() + 12, 0));
+					12, 0));
 			mDescContainer.setSize(Eigen::Vector2f(Renderer::getScreenWidth() * (mTheme->getFloat("listOffsetX") - 0.03f), Renderer::getScreenHeight() - mDescContainer.getPosition().y()));
 			mDescContainer.setScrollPos(Eigen::Vector2d(0, 0));
 			mDescContainer.resetAutoScrollTimer();

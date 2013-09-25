@@ -68,8 +68,6 @@ private:
 	ImageComponent mTransitionImage;
 	AnimationComponent mTransitionAnimation;
 
-	Eigen::Vector3f getImagePos();
-
 	bool mLockInput;
 	
 	void (GuiGameList::*mEffectFunc)(int);
