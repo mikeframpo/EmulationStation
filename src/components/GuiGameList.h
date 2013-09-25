@@ -58,7 +58,7 @@ private:
 	int mSystemId;
 
 	TextListComponent<FileData*> mList;
-	ImageComponent mScreenshot;
+    std::vector<ImageComponent> mImages;
 	TextComponent mDescription;
 	ScrollableContainer mDescContainer;
 	AnimationComponent mImageAnimation;

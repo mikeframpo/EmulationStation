@@ -162,10 +162,19 @@ void parseGamelist(SystemData* system)
 			{
 				game->setDescription(gameNode.child(GameData::xmlTagDescription.c_str()).text().get());
 			}
-			if(gameNode.child(GameData::xmlTagImagePath.c_str()))
+			for (pugi::xml_node imageNode : gameNode.children(GameData::xmlTagImagePath.c_str()))
 			{
-				newImage = gameNode.child(GameData::xmlTagImagePath.c_str()).text().get();
-
+				int imageId = 0;
+				pugi::xml_attribute id_attr = imageNode.attribute("id");
+				if (id_attr) {
+					imageId = atoi(id_attr.value());
+				} else {
+					LOG(LogWarning) << "Game: " << game->getName() << " <image> tag without \"id\""	
+						<< " attribute is deprecated. Image with id=\"0\" may overwrite this image.";
+				}
+				
+				newImage = imageNode.text().get();
+				
 				//expand "."
 				if(newImage[0] == '.')
 				{
@@ -173,11 +182,11 @@ void parseGamelist(SystemData* system)
 					boost::filesystem::path pathname(xmlpath);
 					newImage.insert(0, pathname.parent_path().generic_string() );
 				}
-
+				
 				//if the image exist, set it
 				if(boost::filesystem::exists(newImage))
 				{
-					game->setImagePath(newImage);
+					game->setImagePath(imageId, newImage);
 				}
 			}
 
@@ -232,9 +241,14 @@ void addGameDataNode(pugi::xml_node & parent, const GameData * game)
 		pugi::xml_node descriptionNode = newGame.append_child(GameData::xmlTagDescription.c_str());
 		descriptionNode.text().set(game->getDescription().c_str());
 	}
-	if (!game->getImagePath().empty()) {
-		pugi::xml_node imagePathNode = newGame.append_child(GameData::xmlTagImagePath.c_str());
-		imagePathNode.text().set(game->getImagePath().c_str());
+
+	for (int iImg = 0; iImg < game->getNumImagePaths(); iImg++) {
+		if (!game->getImagePath(iImg).empty()) {
+			pugi::xml_node imagePathNode = newGame.append_child(GameData::xmlTagImagePath.c_str());
+			pugi::xml_attribute idAttr = imagePathNode.append_attribute("id");
+			idAttr.set_value(std::to_string(iImg).c_str());
+			imagePathNode.text().set(game->getImagePath(iImg).c_str());
+		}
 	}
 	//all other values are added regardless of their value
 	pugi::xml_node ratingNode = newGame.append_child(GameData::xmlTagRating.c_str());

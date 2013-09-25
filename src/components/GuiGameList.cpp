@@ -26,7 +26,7 @@ bool GuiGameList::isDetailed() const
 GuiGameList::GuiGameList(Window* window) : GuiComponent(window), 
 	mTheme(new ThemeComponent(mWindow)),
 	mList(window, 0.0f, 0.0f, Font::get(*window->getResourceManager(), Font::getDefaultPath(), FONT_SIZE_MEDIUM)), 
-	mScreenshot(window),
+	mImages(1, ImageComponent(window)),
 	mDescription(window), 
 	mDescContainer(window), 
 	mTransitionImage(window, 0.0f, 0.0f, "", (float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight(), true), 
@@ -49,7 +49,11 @@ GuiGameList::GuiGameList(Window* window) : GuiComponent(window),
 		sortStates.push_back(FolderData::SortState(FolderData::compareLastPlayed, false, "played most recently"));
 	}
 
-	mImageAnimation.addChild(&mScreenshot);
+    for (	std::vector<ImageComponent>::iterator it = mImages.begin();
+			it != mImages.end();
+			++it) {
+		mImageAnimation.addChild(&(*it));
+	}
 	mDescContainer.addChild(&mDescription);
 
 	//scale delay with screen width (higher width = more text per line)
@@ -67,7 +71,11 @@ GuiGameList::GuiGameList(Window* window) : GuiComponent(window),
 
 	addChild(mTheme);
 	addChild(&mHeaderText);
-	addChild(&mScreenshot);
+	for (	std::vector<ImageComponent>::iterator it = mImages.begin();
+			it != mImages.end();
+			++it) {
+		addChild(&(*it));
+    }
 	addChild(&mDescContainer);
 	addChild(&mList);
 	addChild(&mTransitionImage);
@@ -327,10 +335,21 @@ void GuiGameList::updateTheme()
 
 		mList.setPosition(mTheme->getFloat("listOffsetX") * Renderer::getScreenWidth(), mList.getPosition().y());
 		mList.setTextOffsetX((int)(mTheme->getFloat("listTextOffsetX") * Renderer::getScreenWidth()));
+        
+        for (   std::vector<ImageComponent>::iterator it = mImages.begin();
+                it != mImages.end();
+                ++it) {
+            (*it).setPosition(
+					mTheme->getFloat("gameImageOffsetX") * Renderer::getScreenWidth(),
+					mTheme->getFloat("gameImageOffsetY") * Renderer::getScreenHeight());
+            (*it).setOrigin(
+					mTheme->getFloat("gameImageOriginX"),
+					mTheme->getFloat("gameImageOriginY"));
+            (*it).setResize(
+					mTheme->getFloat("gameImageWidth") * Renderer::getScreenWidth(),
+					mTheme->getFloat("gameImageHeight") * Renderer::getScreenHeight(), false);
+        }
 
-		mScreenshot.setPosition(mTheme->getFloat("gameImageOffsetX") * Renderer::getScreenWidth(), mTheme->getFloat("gameImageOffsetY") * Renderer::getScreenHeight());
-		mScreenshot.setOrigin(mTheme->getFloat("gameImageOriginX"), mTheme->getFloat("gameImageOriginY"));
-		mScreenshot.setResize(mTheme->getFloat("gameImageWidth") * Renderer::getScreenWidth(), mTheme->getFloat("gameImageHeight") * Renderer::getScreenHeight(), false);
 
 		mDescription.setColor(mTheme->getColor("description"));
 		mDescription.setFont(mTheme->getDescriptionFont());
@@ -347,25 +366,34 @@ void GuiGameList::updateDetailData()
 {
 	if(!isDetailed())
 	{
-		mScreenshot.setImage("");
 		mDescription.setText("");
+        for (	std::vector<ImageComponent>::iterator it = mImages.begin();
+				it != mImages.end();
+				++it) {
+			(*it).setImage("");
+		}
 	}else{
 		//if we've selected a game
 		if(mList.getSelectedObject() && !mList.getSelectedObject()->isFolder())
 		{
 			//set image to either "not found" image or metadata image
-			if(((GameData*)mList.getSelectedObject())->getImagePath().empty())
-				mScreenshot.setImage(mTheme->getString("imageNotFoundPath"));
-			else
-				mScreenshot.setImage(((GameData*)mList.getSelectedObject())->getImagePath());
-
 			Eigen::Vector3f imgOffset = Eigen::Vector3f(Renderer::getScreenWidth() * 0.10f, 0, 0);
-			mScreenshot.setPosition(getImagePos() - imgOffset);
+			for (int iImg = 0; iImg < mImages.size(); iImg++)
+			{
+				if(((GameData*)mList.getSelectedObject())->getImagePath(iImg).empty())
+					mImages[iImg].setImage(mTheme->getString("imageNotFoundPath"));
+				else
+					mImages[iImg].setImage(((GameData*)mList.getSelectedObject())->getImagePath(iImg));
+				
+				mImages[iImg].setPosition(getImagePos() - imgOffset);
+			}
 
 			mImageAnimation.fadeIn(35);
 			mImageAnimation.move(imgOffset.x(), imgOffset.y(), 20);
 
-			mDescContainer.setPosition(Eigen::Vector3f(Renderer::getScreenWidth() * 0.03f, getImagePos().y() + mScreenshot.getSize().y() + 12, 0));
+			mDescContainer.setPosition(Eigen::Vector3f(
+					Renderer::getScreenWidth() * 0.03f, 
+					getImagePos().y() + 12, 0));
 			mDescContainer.setSize(Eigen::Vector2f(Renderer::getScreenWidth() * (mTheme->getFloat("listOffsetX") - 0.03f), Renderer::getScreenHeight() - mDescContainer.getPosition().y()));
 			mDescContainer.setScrollPos(Eigen::Vector2d(0, 0));
 			mDescContainer.resetAutoScrollTimer();
@@ -374,8 +402,12 @@ void GuiGameList::updateDetailData()
 			mDescription.setSize(Eigen::Vector2f(Renderer::getScreenWidth() * (mTheme->getFloat("listOffsetX") - 0.03f), 0));
 			mDescription.setText(((GameData*)mList.getSelectedObject())->getDescription());
 		}else{
-			mScreenshot.setImage("");
 			mDescription.setText("");
+			for (	std::vector<ImageComponent>::iterator it = mImages.begin();
+					it != mImages.end();
+					++it) {
+				(*it).setImage("");
+			}
 		}
 	}
 }
@@ -474,7 +506,11 @@ void GuiGameList::updateGameLaunchEffect(int t)
 	const int fadeDelay = endTime - 600;
 	const int fadeTime = endTime - fadeDelay - 100;
 
-	Eigen::Vector2f imageCenter(mScreenshot.getCenter());
+    Eigen::Vector2f imageCenter(0.5f, 0.5f);
+    if (!mImages.empty()) {
+	    imageCenter = Eigen::Vector2f(mImages[0].getCenter());
+    }
+
 	if(!isDetailed())
 	{
 		imageCenter << mList.getPosition().x() + mList.getSize().x() / 2, mList.getPosition().y() + mList.getSize().y() / 2;
