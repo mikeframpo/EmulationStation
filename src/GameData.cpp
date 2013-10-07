@@ -55,20 +55,30 @@ void GameData::setDescription(const std::string & description)
 	mDescription = description;
 }
 
-const std::string & GameData::getImagePath(int imageId) const
+const std::string GameData::getImagePath(int imageId) const
 {
-	return mImagePaths[imageId];
+	std::map<int, std::string>::const_iterator iter = mImagePaths.find(imageId);
+	if (iter != mImagePaths.end())
+	{
+		return iter->second;
+	}
+	std::string empty;
+	return empty;
 }
 
 void GameData::setImagePath(int imageId, const std::string & imagePath)
 {
-	mImagePaths.resize(imageId + 1);
 	mImagePaths[imageId] = imagePath;
 }
 
-std::vector<std::string>::size_type GameData::getNumImagePaths() const
+std::vector<int> GameData::getImageIds(std::vector<int>& imageIds) const
 {
-	return mImagePaths.size();
+	for (	std::map<int, std::string>::const_iterator it = mImagePaths.begin();
+			it != mImagePaths.end();
+			it++)
+	{
+		imageIds.push_back(it->first);
+	}
 }
 
 float GameData::getRating() const

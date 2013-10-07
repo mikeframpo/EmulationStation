@@ -242,13 +242,18 @@ void addGameDataNode(pugi::xml_node & parent, const GameData * game)
 		descriptionNode.text().set(game->getDescription().c_str());
 	}
 
-	for (int iImg = 0; iImg < game->getNumImagePaths(); iImg++) {
-		if (!game->getImagePath(iImg).empty()) {
-			pugi::xml_node imagePathNode = newGame.append_child(GameData::xmlTagImagePath.c_str());
-			pugi::xml_attribute idAttr = imagePathNode.append_attribute("id");
-			idAttr.set_value(std::to_string(iImg).c_str());
-			imagePathNode.text().set(game->getImagePath(iImg).c_str());
-		}
+	std::vector<int> gameImageIds;
+	game->getImageIds(gameImageIds);
+
+	for (	std::vector<int>::iterator it = gameImageIds.begin();
+			it != gameImageIds.end();
+			it++) {
+		
+		std::string imgPath = game->getImagePath(*it);
+		pugi::xml_node imagePathNode = newGame.append_child(GameData::xmlTagImagePath.c_str());
+		pugi::xml_attribute idAttr = imagePathNode.append_attribute("id");
+		idAttr.set_value(imgPath.c_str());
+		imagePathNode.text().set(imgPath.c_str());
 	}
 	//all other values are added regardless of their value
 	pugi::xml_node ratingNode = newGame.append_child(GameData::xmlTagRating.c_str());

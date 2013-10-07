@@ -35,9 +35,9 @@ public:
 	const std::string & getDescription() const;
 	void setDescription(const std::string & description);
 
-	const std::string & getImagePath(int imageId) const;
+	const std::string getImagePath(int imageId) const;
 	void setImagePath(int imageId, const std::string & imagePath);
-	std::vector<std::string>::size_type getNumImagePaths() const;
+	std::vector<int> getImageIds(std::vector<int>& imageIds) const;
 
 	float getRating() const;
 	void setRating(float rating);
@@ -62,7 +62,7 @@ private:
 
 	//extra data
 	std::string mDescription;
-	std::vector<std::string> mImagePaths;
+	std::map<int,std::string> mImagePaths;
 	float mRating;
 	float mUserRating;
 	size_t mTimesPlayed;
