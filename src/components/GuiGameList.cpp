@@ -21,7 +21,7 @@ bool GuiGameList::isDetailed() const
 GuiGameList::GuiGameList(Window* window) : GuiComponent(window), 
 	mTheme(new ThemeComponent(mWindow)),
 	mList(window, 0.0f, 0.0f, Font::get(*window->getResourceManager(), Font::getDefaultPath(), FONT_SIZE_MEDIUM)), 
-	mImages(2, ImageComponent(window)),
+	mImages(),
 	mDescription(window), 
 	mDescContainer(window), 
 	mTransitionImage(window, 0.0f, 0.0f, "", (float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight(), true), 
@@ -44,11 +44,6 @@ GuiGameList::GuiGameList(Window* window) : GuiComponent(window),
 		sortStates.push_back(FolderData::SortState(FolderData::compareLastPlayed, false, "played most recently"));
 	}
 
-    for (	std::vector<ImageComponent>::iterator it = mImages.begin();
-			it != mImages.end();
-			++it) {
-		mImageAnimation.addChild(&(*it));
-	}
 	mDescContainer.addChild(&mDescription);
 
 	//scale delay with screen width (higher width = more text per line)
@@ -66,14 +61,8 @@ GuiGameList::GuiGameList(Window* window) : GuiComponent(window),
 
 	addChild(mTheme);
 	addChild(&mHeaderText);
-	for (	std::vector<ImageComponent>::iterator it = mImages.begin();
-			it != mImages.end();
-			++it) {
-		addChild(&(*it));
-    }
 	addChild(&mDescContainer);
 	addChild(&mList);
-	addChild(&mTransitionImage);
 
 	mTransitionAnimation.addChild(this);
 
@@ -330,19 +319,40 @@ void GuiGameList::updateTheme()
 
 		mList.setPosition(mTheme->getFloat("listOffsetX") * Renderer::getScreenWidth(), mList.getPosition().y());
 		mList.setTextOffsetX((int)(mTheme->getFloat("listTextOffsetX") * Renderer::getScreenWidth()));
+
+		std::vector<int> imageIds;
+		mTheme->getGameImageIds(imageIds);
+		for (std::vector<int>::iterator it = imageIds.begin();
+				it != imageIds.end();
+				it++) {
+
+			GameImageInfo* imageInfo = mTheme->getGameImageInfo(*it);
+			ImageComponent newImg(mWindow);
+			mImages.insert(std::map<int, ImageComponent>::value_type((*it), newImg));
+		}
+
+		for (imgIter it = mImages.begin(); it != mImages.end(); ++it) {
+			addChild(&(it->second));
+			mImageAnimation.addChild(&(it->second));
+    	}
+
+		addChild(&mTransitionImage);
         
-        for (int iImg = 0; iImg < mTheme->getNumGameImages(); iImg++) {
-			Eigen::Vector3f imagePos = mTheme->getImagePos(iImg);
-            mImages[iImg].setPosition(
-					imagePos[0] * Renderer::getScreenWidth(),
-					imagePos[1] * Renderer::getScreenHeight());
-            mImages[iImg].setOrigin(
+        for (std::vector<int>::iterator it = imageIds.begin();
+				it != imageIds.end();
+				it++) {
+
+			GameImageInfo* imageInfo = mTheme->getGameImageInfo(*it);
+			ImageComponent& img = mImages.find(*it)->second;
+
+            img.setPosition(imageInfo->getImagePos());
+            img.setOrigin(
 					mTheme->getFloat("gameImageOriginX"),
 					mTheme->getFloat("gameImageOriginY"));
-            mImages[iImg].setResize(
+            img.setResize(
 					mTheme->getFloat("gameImageWidth") * Renderer::getScreenWidth(),
 					mTheme->getFloat("gameImageHeight") * Renderer::getScreenHeight(), false);
-        }
+		}
 
 
 		mDescription.setColor(mTheme->getColor("description"));
@@ -361,10 +371,8 @@ void GuiGameList::updateDetailData()
 	if(!isDetailed())
 	{
 		mDescription.setText("");
-        for (	std::vector<ImageComponent>::iterator it = mImages.begin();
-				it != mImages.end();
-				++it) {
-			(*it).setImage("");
+        for (imgIter it = mImages.begin(); it != mImages.end(); ++it) {
+			it->second.setImage("");
 		}
 	}else{
 		//if we've selected a game
@@ -372,14 +380,15 @@ void GuiGameList::updateDetailData()
 		{
 			//set image to either "not found" image or metadata image
 			Eigen::Vector3f imgOffset = Eigen::Vector3f(Renderer::getScreenWidth() * 0.10f, 0, 0);
-			for (int iImg = 0; iImg < mImages.size(); iImg++)
+			for (imgIter it = mImages.begin(); it != mImages.end(); ++it)
 			{
-				if(((GameData*)mList.getSelectedObject())->getImagePath(iImg).empty())
-					mImages[iImg].setImage(mTheme->getString("imageNotFoundPath"));
+				if(((GameData*)mList.getSelectedObject())->getImagePath(it->first).empty())
+					it->second.setImage(mTheme->getString("imageNotFoundPath"));
 				else
-					mImages[iImg].setImage(((GameData*)mList.getSelectedObject())->getImagePath(iImg));
+					it->second.setImage(((GameData*)mList.getSelectedObject())->getImagePath(it->first));
 				
-				mImages[iImg].setPosition(mTheme->getImagePos(iImg) - imgOffset);
+				GameImageInfo* imageInfo = mTheme->getGameImageInfo(it->first);
+				it->second.setPosition(imageInfo->getImagePos() - imgOffset);
 			}
 
 			mImageAnimation.fadeIn(35);
@@ -396,12 +405,11 @@ void GuiGameList::updateDetailData()
 			mDescription.setPosition(0, 0);
 			mDescription.setSize(Eigen::Vector2f(Renderer::getScreenWidth() * (mTheme->getFloat("listOffsetX") - 0.03f), 0));
 			mDescription.setText(((GameData*)mList.getSelectedObject())->getDescription());
-		}else{
+		} else {
 			mDescription.setText("");
-			for (	std::vector<ImageComponent>::iterator it = mImages.begin();
-					it != mImages.end();
-					++it) {
-				(*it).setImage("");
+			for (imgIter it = mImages.begin(); it != mImages.end(); ++it)
+			{
+				it->second.setImage("");
 			}
 		}
 	}
@@ -502,9 +510,6 @@ void GuiGameList::updateGameLaunchEffect(int t)
 	const int fadeTime = endTime - fadeDelay - 100;
 
     Eigen::Vector2f imageCenter(0.5f, 0.5f);
-    if (!mImages.empty()) {
-	    imageCenter = Eigen::Vector2f(mImages[0].getCenter());
-    }
 
 	if(!isDetailed())
 	{

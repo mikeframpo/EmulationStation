@@ -58,7 +58,10 @@ private:
 	int mSystemId;
 
 	TextListComponent<FileData*> mList;
-    std::vector<ImageComponent> mImages;
+
+	typedef std::map<int,ImageComponent>::iterator imgIter;
+	std::map<int, ImageComponent> mImages;
+
 	TextComponent mDescription;
 	ScrollableContainer mDescContainer;
 	AnimationComponent mImageAnimation;

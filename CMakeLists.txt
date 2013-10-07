@@ -135,6 +135,7 @@ set(ES_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VolumeControl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Window.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/XMLReader.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/GameImageInfo.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/AnimationComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/ComponentListComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/ImageComponent.h
@@ -178,6 +179,7 @@ set(ES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VolumeControl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Window.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/XMLReader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/GameImageInfo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/AnimationComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/ComponentListComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/ImageComponent.cpp

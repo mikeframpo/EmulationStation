@@ -8,6 +8,7 @@
 #include "GuiBox.h"
 #include "../AudioManager.h"
 #include "../Font.h"
+#include "../GameImageInfo.h"
 
 //This class loads an XML-defined list of GuiComponents.
 class ThemeComponent : public GuiComponent
@@ -30,8 +31,8 @@ public:
 	std::shared_ptr<Font> getDescriptionFont();
 	std::shared_ptr<Font> getFastSelectFont();
 
-	int getNumGameImages() const;
-	Eigen::Vector3f getImagePos(int imageId);
+	GameImageInfo* getGameImageInfo(int id);
+	void getGameImageIds(std::vector<int>& imageIds) const;
 
 private:
 	void setDefaults();
@@ -50,7 +51,7 @@ private:
 
 	std::string mPath;
 
-	int mNumGameImages;
+	std::map<int, GameImageInfo> mGameImageInfo;
 	std::map<std::string, unsigned int> mColorMap;
 	std::map<std::string, bool> mBoolMap;
 	std::map<std::string, float> mFloatMap;

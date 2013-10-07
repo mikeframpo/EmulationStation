@@ -59,6 +59,21 @@ std::shared_ptr<Font> ThemeComponent::getFastSelectFont()
 		return Font::get(*mWindow->getResourceManager(), Font::getDefaultPath(), FONT_SIZE_LARGE);
 }
 
+GameImageInfo* ThemeComponent::getGameImageInfo(int id)
+{
+	GameImageInfo& imageInfo = mGameImageInfo[id];
+	return &imageInfo;
+}
+
+void ThemeComponent::getGameImageIds(std::vector<int>& imageIds) const
+{
+	for (	std::map<int, GameImageInfo>::const_iterator it = mGameImageInfo.begin();
+			it != mGameImageInfo.end();
+			++it) {
+		imageIds.push_back(it->first);
+	}
+}
+
 ThemeComponent::ThemeComponent(Window* window) : GuiComponent(window)
 {
 	mSoundMap["menuScroll"] = std::shared_ptr<Sound>(new Sound);
@@ -204,7 +219,7 @@ void ThemeComponent::readXML(std::string path, bool detailed)
 	mFloatMap["listTextOffsetX"] = strToFloat(root.child("listTextOffsetX").text().get(), mFloatMap["listTextOffsetX"]);
 
 	//game image stuff
-	mNumGameImages = 0;
+	mGameImageInfo.clear();
 	for (pugi::xml_node gameImagePosNode : root.children("gameImagePos"))
 	{
 		std::string artPosX, artPosY;
@@ -213,12 +228,13 @@ void ThemeComponent::readXML(std::string path, bool detailed)
 		pugi::xml_attribute idAttr = gameImagePosNode.attribute("id");
 		int imageId = atoi(idAttr.value());
 
-		std::string offXKey = getGameImageParamKey("gameImageOffsetX", imageId);
-		std::string offYKey = getGameImageParamKey("gameImageOffsetY", imageId);
+		float imgPosX = resolveExp(artPosX, mFloatMap["gameImageOffsetX"]);
+		float imgPosY = resolveExp(artPosY, mFloatMap["gameImageOffsetY"]);
 
-		mFloatMap[offXKey] = resolveExp(artPosX, mFloatMap[offXKey]);
-		mFloatMap[offYKey] = resolveExp(artPosY, mFloatMap[offYKey]);
-		mNumGameImages++;
+		GameImageInfo imgInfo(
+				imageId,
+				Eigen::Vector3f(imgPosX, imgPosY, 0));
+		mGameImageInfo[imageId] = imgInfo;
 	}
 
 	std::string artDim = root.child("gameImageDim").text().get();
@@ -251,14 +267,6 @@ void ThemeComponent::readXML(std::string path, bool detailed)
 
 	LOG(LogInfo) << "Theme loading complete.";
 }
-
-const std::string ThemeComponent::getGameImageParamKey(std::string prefix, int imageId)
-{
-	std::ostringstream stream;
-	stream << prefix << "_" << imageId;
-	return stream.str();
-}
-
 
 //recursively creates components
 void ThemeComponent::createComponentChildren(pugi::xml_node node, GuiComponent* parent)
@@ -429,19 +437,4 @@ std::shared_ptr<Font> ThemeComponent::resolveFont(pugi::xml_node node, std::stri
 
 	return Font::get(*mWindow->getResourceManager(), path, size);
 }
-
-int ThemeComponent::getNumGameImages() const
-{
-	return mNumGameImages;
-}
-
-Eigen::Vector3f ThemeComponent::getImagePos(int imageId)
-{
-	std::string offXKey = getGameImageParamKey("gameImageOffsetX", imageId);
-	std::string offYKey = getGameImageParamKey("gameImageOffsetY", imageId);
-	return Eigen::Vector3f(
-		Renderer::getScreenWidth() * getFloat(offXKey),
-		Renderer::getScreenHeight() * getFloat(offYKey), 0.0f);
-}
-
 
