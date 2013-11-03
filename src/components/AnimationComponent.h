@@ -21,6 +21,7 @@ public:
 	void update(int deltaTime);
 
 	void addChild(GuiComponent* gui);
+	void clearChildren();
 
 private:
 	unsigned char mOpacity;

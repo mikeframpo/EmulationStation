@@ -320,6 +320,7 @@ void GuiGameList::updateTheme()
 		mList.setPosition(mTheme->getFloat("listOffsetX") * Renderer::getScreenWidth(), mList.getPosition().y());
 		mList.setTextOffsetX((int)(mTheme->getFloat("listTextOffsetX") * Renderer::getScreenWidth()));
 
+		mImages.clear();
 		std::vector<int> imageIds;
 		mTheme->getGameImageIds(imageIds);
 		for (std::vector<int>::iterator it = imageIds.begin();
@@ -331,6 +332,7 @@ void GuiGameList::updateTheme()
 			mImages.insert(std::map<int, ImageComponent>::value_type((*it), newImg));
 		}
 
+		mImageAnimation.clearChildren();
 		for (imgIter it = mImages.begin(); it != mImages.end(); ++it) {
 			addChild(&(it->second));
 			mImageAnimation.addChild(&(it->second));

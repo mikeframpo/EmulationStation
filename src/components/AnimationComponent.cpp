@@ -81,6 +81,12 @@ void AnimationComponent::addChild(GuiComponent* gui)
 	mChildren.push_back(gui);
 }
 
+void AnimationComponent::clearChildren()
+{
+	mChildren.clear();
+}
+
+
 void AnimationComponent::moveChildren(int offsetx, int offsety)
 {
 	Eigen::Vector3f move((float)offsetx, (float)offsety, 0);
